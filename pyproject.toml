@@ -9,7 +9,7 @@ description = "Concordance index (C-index) between two right-censored survival s
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Karl Pichotta", email = "karlpichotta@gmail.com" }]
+authors = [{ name = "Karl Pichotta" }]
 keywords = ["survival-analysis", "concordance", "c-index", "censoring", "ipcw", "lifelines"]
 classifiers = [
     "Intended Audience :: Science/Research",
