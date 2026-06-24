@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from symmetric_concordance import symmetric_concordance_index
+from symmetric_concordance import KaplanMeierCensoring, symmetric_concordance_index
 
 
 def test_perfect_agreement_all_observed() -> None:
@@ -76,3 +76,72 @@ def test_shape_mismatch_raises() -> None:
 def test_nan_times_raise() -> None:
     with pytest.raises(ValueError, match="contains NaNs"):
         symmetric_concordance_index([1, 2, np.nan], [1, 2, 3])
+
+
+def test_nan_observed_raises() -> None:
+    with pytest.raises(ValueError, match="contains NaNs"):
+        symmetric_concordance_index([1, 2, 3], [1, 2, 3], gold_observed=[1, np.nan, 0])
+
+
+def test_partial_concordance_is_fraction_of_pairs() -> None:
+    # pairs (0,1) and (0,2) agree, (1,2) disagrees -> 2/3
+    r = symmetric_concordance_index([1, 2, 3], [1, 3, 2])
+    assert r.concordance == pytest.approx(2 / 3)
+    assert r.n_usable == 3
+
+
+def test_tied_times_are_not_orderable() -> None:
+    # the (0,1) pair ties in gold time and is dropped
+    r = symmetric_concordance_index([5, 5, 10], [1, 2, 3])
+    assert r.n_usable == 2
+    assert r.n_pairs == 3
+
+
+def test_resolution_times_is_binding_max() -> None:
+    # one usable pair; binding time is max(gold det 20, pred det 12) = 20
+    r = symmetric_concordance_index([20, 90], [12, 80], [1, 0], [1, 0])
+    assert np.allclose(r.resolution_times, [20.0])
+
+
+def test_callable_censoring_and_weight_floor() -> None:
+    gold, pred = [10, 20, 30], [10, 30, 20]
+    hi = symmetric_concordance_index(
+        gold,
+        pred,
+        ipcw=True,
+        weight_floor=0.05,
+        censoring=lambda t: np.where(np.asarray(t, dtype=float) < 15, 0.5, 0.02),
+    )
+    lo = symmetric_concordance_index(
+        gold,
+        pred,
+        ipcw=True,
+        weight_floor=0.001,
+        censoring=lambda t: np.where(np.asarray(t, dtype=float) < 15, 0.5, 0.02),
+    )
+    assert hi.concordance == pytest.approx(2 / 3)
+    assert not np.isclose(hi.concordance_ipcw, lo.concordance_ipcw)
+
+
+def test_kmcensoring_instance_matches_default_ipcw() -> None:
+    gold_t, gold_e = [10, 20, 30, 40], [1, 1, 0, 1]
+    pred_t, pred_e = [12, 18, 35, 38], [1, 1, 1, 1]
+    default = symmetric_concordance_index(gold_t, pred_t, gold_e, pred_e, ipcw=True)
+    km = KaplanMeierCensoring().fit(gold_t, gold_e)
+    explicit = symmetric_concordance_index(gold_t, pred_t, gold_e, pred_e, ipcw=True, censoring=km)
+    assert np.isclose(default.concordance_ipcw, explicit.concordance_ipcw)
+
+
+def test_bad_censoring_raises() -> None:
+    with pytest.raises(TypeError, match="censoring must be"):
+        symmetric_concordance_index([1, 2, 3], [1, 2, 3], ipcw=True, censoring=42)  # type: ignore[arg-type]
+
+
+def test_non_1d_input_raises() -> None:
+    with pytest.raises(ValueError, match="1-dimensional"):
+        symmetric_concordance_index([[1, 2], [3, 4]], [1, 2, 3, 4])
+
+
+def test_observed_length_mismatch_raises() -> None:
+    with pytest.raises(ValueError, match="same length as the times"):
+        symmetric_concordance_index([1, 2, 3], [1, 2, 3], gold_observed=[1, 1])

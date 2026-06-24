@@ -55,6 +55,13 @@ r = symmetric_concordance_index(
 Ties in time aren't orderable (strict `<`), so tied predictions get no half-credit. IPCW
 weights are `1 / G(t)**2`, with `G` floored at `weight_floor` (default 0.05).
 
+## Caveats
+
+- `pred_times` is a predicted *time* (bigger = later event), not a risk score.
+- Pass `pred_observed` when predictions are censored. It defaults to all-observed, which
+  brings back the bias this metric exists to avoid.
+- Series are aligned by position; align by id yourself first if needed.
+
 ## Development
 
 ```bash

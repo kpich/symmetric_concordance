@@ -78,6 +78,8 @@ def _check_observed(values: ArrayLike | None, n: int, name: str) -> NDArray[np.b
     arr = np.asarray(values)
     if arr.ndim != 1 or arr.shape[0] != n:
         raise ValueError(f"{name} must be 1-dimensional with the same length as the times")
+    if np.issubdtype(arr.dtype, np.floating) and np.isnan(arr).any():
+        raise ValueError(f"{name} contains NaNs; please drop or correct them")
     return arr.astype(bool)
 
 
