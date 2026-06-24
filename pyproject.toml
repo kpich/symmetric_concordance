@@ -75,7 +75,9 @@ convention = "numpy"
 "tests/*" = ["D", "N806", "ARG"]
 
 [tool.mypy]
-python_version = "3.10"
+# 3.12+ so mypy can parse numpy's stubs (they use PEP 695 `type` statements).
+# Runtime 3.10 support is covered by the pytest matrix.
+python_version = "3.12"
 strict = true
 files = ["src", "tests"]
 
