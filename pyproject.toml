@@ -27,12 +27,9 @@ dev = ["pytest", "ruff", "mypy", "lifelines", "pre-commit"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/symmetric_concordance"]
-exclude = ["**/*_test.py"]  # co-located unit tests are dev-only, not shipped
+exclude = ["**/*_test.py"]
 
 [tool.pytest.ini_options]
-# Unit tests live next to their source (src/**/*_test.py); integration tests
-# live in tests/. importlib mode is the recommended way to collect tests that
-# live inside an installed src-layout package.
 testpaths = ["src", "tests"]
 python_files = ["*_test.py", "test_*.py"]
 addopts = "--import-mode=importlib"
@@ -78,8 +75,6 @@ ignore = [
 convention = "numpy"
 
 [tool.ruff.lint.per-file-ignores]
-# Tests: no docstring policy; allow CapWords locals (e.g. capturing a class
-# from importorskip) and unused pytest args.
 "**/*_test.py" = ["D", "N806", "ARG"]
 "tests/*" = ["D", "N806", "ARG"]
 

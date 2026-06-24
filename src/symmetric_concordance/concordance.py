@@ -180,8 +180,7 @@ def symmetric_concordance_index(
     # When usable, exactly one direction holds per margin; agreement == same dir.
     agree = (g_a_first == f_a_first)[usable]
 
-    # Binding (resolution) time per usable pair: when it becomes orderable in
-    # both margins = max of each margin's determining event time.
+    # Binding time per usable pair: max of each margin's determining event time.
     tg_det = np.where(g_a_first, tga, tgb)[usable]
     tf_det = np.where(f_a_first, tfa, tfb)[usable]
     t_det = np.maximum(tg_det, tf_det).astype(np.float64)
