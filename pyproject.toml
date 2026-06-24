@@ -1,0 +1,84 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "symmetric-concordance"
+version = "0.1.0"
+description = "Concordance index (C-index) between two right-censored survival series."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Karl Pichotta", email = "karlpichotta@gmail.com" }]
+keywords = ["survival-analysis", "concordance", "c-index", "censoring", "ipcw", "lifelines"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = ["numpy"]
+
+[dependency-groups]
+dev = ["pytest", "ruff", "mypy", "lifelines", "pre-commit"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/symmetric_concordance"]
+exclude = ["**/*_test.py"]
+
+[tool.pytest.ini_options]
+testpaths = ["src", "tests"]
+python_files = ["*_test.py", "test_*.py"]
+addopts = "--import-mode=importlib"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "F",    # pyflakes
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "I",    # isort (import ordering)
+    "N",    # pep8-naming
+    "D",    # pydocstyle (numpy convention)
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "A",    # flake8-builtins (shadowing)
+    "C4",   # flake8-comprehensions
+    "PIE",  # flake8-pie
+    "PT",   # flake8-pytest-style
+    "RET",  # flake8-return
+    "SIM",  # flake8-simplify
+    "ARG",  # flake8-unused-arguments
+    "TID",  # flake8-tidy-imports
+    "ICN",  # flake8-import-conventions
+    "NPY",  # numpy-specific
+    "PERF", # perflint
+    "FURB", # refurb
+    "PL",   # pylint (C/E/R/W)
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "D203",    # one-blank-line-before-class (conflicts with D211)
+    "D213",    # multi-line-summary-second-line (conflicts with D212)
+    "PLR0913", # too-many-arguments: the public metric legitimately takes several
+    "PLR2004", # magic-value-comparison: too noisy, especially in tests
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"**/*_test.py" = ["D", "N806", "ARG"]
+"tests/*" = ["D", "N806", "ARG"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["lifelines.*"]
+ignore_missing_imports = true
