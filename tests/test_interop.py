@@ -7,7 +7,7 @@ which is why they live here rather than next to the source as unit tests.
 import numpy as np
 import pytest
 
-from symmetric_concordance import KaplanMeierCensoring, symmetric_concordance_index
+from symmetric_concordance import KaplanMeierCensoring, symmetric_concordance_ipcw
 
 
 def test_lifelines_spuriously_perfect_on_the_leak_case() -> None:
@@ -29,11 +29,9 @@ def test_builtin_km_matches_lifelines_kmf() -> None:
 
     kmf = KaplanMeierFitter().fit(gold_t, 1 - gold_e.astype(int))
 
-    r_builtin = symmetric_concordance_index(gold_t, pred_t, gold_e, pred_e, ipcw=True)
-    r_lifelines = symmetric_concordance_index(
-        gold_t, pred_t, gold_e, pred_e, ipcw=True, censoring=kmf
-    )
-    assert np.isclose(r_builtin.concordance_ipcw, r_lifelines.concordance_ipcw)
+    r_builtin = symmetric_concordance_ipcw(gold_t, pred_t, gold_e, pred_e)
+    r_lifelines = symmetric_concordance_ipcw(gold_t, pred_t, gold_e, pred_e, censoring=kmf)
+    assert np.isclose(r_builtin.concordance, r_lifelines.concordance)
 
 
 def test_builtin_km_matches_lifelines_predict_values() -> None:

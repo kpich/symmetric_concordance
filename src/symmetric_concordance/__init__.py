@@ -6,12 +6,17 @@ package allows *both* series to be right-censored.
 """
 
 from .censoring import KaplanMeierCensoring
-from .concordance import SymmetricConcordanceResult, symmetric_concordance_index
+from .concordance import (
+    SymmetricConcordanceResult,
+    symmetric_concordance_index,
+    symmetric_concordance_ipcw,
+)
 
 __all__ = [
     "KaplanMeierCensoring",
     "SymmetricConcordanceResult",
     "symmetric_concordance_index",
+    "symmetric_concordance_ipcw",
 ]
 
 __version__ = "0.1.0"

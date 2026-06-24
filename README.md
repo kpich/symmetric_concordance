@@ -10,6 +10,8 @@ orderable and you get NaN instead of a misleadingly perfect score.
 
 ## Install
 
+Not on PyPI yet (coming soon). For now:
+
 ```bash
 pip install -e .
 pip install -e ".[ipcw]"   # adds lifelines, for KaplanMeierFitter interop
@@ -22,34 +24,35 @@ from symmetric_concordance import symmetric_concordance_index
 
 gold_times    = [10, 20, 30, 40, 50]
 gold_observed = [1, 1, 1, 1, 1]
-pred_times    = [12, 18, 33, 38, 51]
-pred_observed = [1, 1, 1, 1, 1]
+pred_times    = [12, 33, 25, 44, 55]
+pred_observed = [1, 1, 1, 0, 1]   # the 4th prediction is censored
 
 r = symmetric_concordance_index(gold_times, pred_times, gold_observed, pred_observed)
-r.concordance         # 1.0
-r.n_usable, r.n_pairs # (10, 10)
+r.concordance         # 0.888...  (8 of 9 usable pairs agree)
+r.n_usable, r.n_pairs # (9, 10)   (one pair isn't orderable on the predicted side)
 ```
 
 The two series are aligned by position (row `i` is the same subject in both). Event flags
 default to all-observed. The result fields:
 
-- `concordance`: comparable-pairs concordance, 0.5 is chance
-- `concordance_ipcw`: IPCW-reweighted version (NaN unless `ipcw=True`)
+- `concordance`: comparable-pairs concordance, 0.5 is chance (NaN if no pair is usable)
 - `n_usable`, `n_pairs`, `frac_usable`: pair counts
 - `resolution_times`: per usable pair, the time it became orderable
 
-IPCW is off by default. Set `ipcw=True` to also get the reweighted value. It fits a built-in
+For the IPCW-reweighted version, call `symmetric_concordance_ipcw`. It fits a built-in
 Kaplan-Meier censoring curve unless you pass your own via `censoring=` (a fitted lifelines
 `KaplanMeierFitter`, any object with `.predict`, or a callable `G(t)`):
 
 ```python
 import numpy as np
 from lifelines import KaplanMeierFitter
+from symmetric_concordance import symmetric_concordance_ipcw
 
 kmf = KaplanMeierFitter().fit(gold_times, 1 - np.asarray(gold_observed))
-r = symmetric_concordance_index(
-    gold_times, pred_times, gold_observed, pred_observed, ipcw=True, censoring=kmf
+r = symmetric_concordance_ipcw(
+    gold_times, pred_times, gold_observed, pred_observed, censoring=kmf
 )
+r.concordance   # IPCW-reweighted
 ```
 
 Ties in time aren't orderable (strict `<`), so tied predictions get no half-credit. IPCW
@@ -57,7 +60,8 @@ weights are `1 / G(t)**2`, with `G` floored at `weight_floor` (default 0.05).
 
 ## Caveats
 
-- `pred_times` is a predicted *time* (bigger = later event), not a risk score.
+- `pred_times` just has to increase with survival (bigger = later event); negate a risk
+  score. It needs to be an actual time only if you pass `pred_observed` (censored predictions).
 - Pass `pred_observed` when predictions are censored. It defaults to all-observed, which
   brings back the bias this metric exists to avoid.
 - Series are aligned by position; align by id yourself first if needed.

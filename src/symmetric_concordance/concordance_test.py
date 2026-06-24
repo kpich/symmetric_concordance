@@ -3,84 +3,23 @@
 import numpy as np
 import pytest
 
-from symmetric_concordance import KaplanMeierCensoring, symmetric_concordance_index
+from symmetric_concordance import (
+    KaplanMeierCensoring,
+    symmetric_concordance_index,
+    symmetric_concordance_ipcw,
+)
 
 
 def test_perfect_agreement_all_observed() -> None:
     # Same ordering in both series; every event observed.
-    r = symmetric_concordance_index([10, 20, 30, 40, 50], [11, 19, 31, 39, 52], ipcw=True)
-    assert r.concordance == 1.0
-    assert r.concordance_ipcw == 1.0
-    assert r.n_usable == 10  # all pairs orderable
-
-
-def test_ipcw_off_by_default() -> None:
     r = symmetric_concordance_index([10, 20, 30, 40, 50], [11, 19, 31, 39, 52])
     assert r.concordance == 1.0
-    assert np.isnan(r.concordance_ipcw)
+    assert r.n_usable == 10  # all pairs orderable
 
 
 def test_reversed_ordering() -> None:
     r = symmetric_concordance_index([10, 20, 30, 40], [40, 30, 20, 10])
     assert r.concordance == 0.0
-
-
-def test_no_censoring_ipcw_equals_unweighted() -> None:
-    rng = np.random.default_rng(0)
-    t_gold = rng.uniform(5, 60, 40)
-    t_pred = t_gold + rng.normal(0, 5, 40)
-    r = symmetric_concordance_index(t_gold, t_pred, ipcw=True)
-    assert np.isclose(r.concordance, r.concordance_ipcw)
-
-
-def test_censored_prediction_is_not_an_event_at_last_date() -> None:
-    """The leak the metric is meant to fix.
-
-    Predictions make NO calls -> every predicted row is censored at the gold
-    date. The symmetric metric sees zero predicted events, hence no orderable
-    pairs, and correctly reports "no information" (NaN).
-    """
-    times = [10, 20, 30, 40, 50]
-    r = symmetric_concordance_index(
-        times, times, gold_observed=[1, 1, 1, 1, 1], pred_observed=[0, 0, 0, 0, 0]
-    )
-    assert r.n_usable == 0
-    assert np.isnan(r.concordance)
-    assert np.isnan(r.concordance_ipcw)
-
-
-def test_censored_larger_member_still_usable() -> None:
-    """A pair with one event and a later censor IS orderable (event is smaller)."""
-    # p0 event at 10, p1 censored at 90 (gold); event at 12, censored at 80 (pred)
-    r = symmetric_concordance_index([10, 90], [12, 80], [1, 0], [1, 0])
-    assert r.n_usable == 1
-    assert r.concordance == 1.0  # both say p0 before p1
-
-
-def test_fewer_than_two_subjects_is_nan() -> None:
-    r = symmetric_concordance_index([10.0], [12.0])
-    assert r.n_pairs == 0
-    assert np.isnan(r.concordance)
-
-
-def test_float_dunder_returns_concordance() -> None:
-    r = symmetric_concordance_index([1, 2, 3], [1, 2, 3])
-    assert float(r) == r.concordance == 1.0
-
-
-def test_shape_mismatch_raises() -> None:
-    with pytest.raises(ValueError, match="same length"):
-        symmetric_concordance_index([1, 2, 3], [1, 2])
-
-
-def test_nan_times_raise() -> None:
-    with pytest.raises(ValueError, match="contains NaNs"):
-        symmetric_concordance_index([1, 2, np.nan], [1, 2, 3])
-
-
-def test_nan_observed_raises() -> None:
-    with pytest.raises(ValueError, match="contains NaNs"):
-        symmetric_concordance_index([1, 2, 3], [1, 2, 3], gold_observed=[1, np.nan, 0])
 
 
 def test_partial_concordance_is_fraction_of_pairs() -> None:
@@ -103,38 +42,93 @@ def test_resolution_times_is_binding_max() -> None:
     assert np.allclose(r.resolution_times, [20.0])
 
 
+def test_censored_prediction_is_not_an_event_at_last_date() -> None:
+    """The leak the metric is meant to fix.
+
+    Predictions make NO calls -> every predicted row is censored at the gold
+    date. The symmetric metric sees zero predicted events, hence no orderable
+    pairs, and correctly reports "no information" (NaN).
+    """
+    times = [10, 20, 30, 40, 50]
+    r = symmetric_concordance_index(times, times, [1, 1, 1, 1, 1], [0, 0, 0, 0, 0])
+    assert r.n_usable == 0
+    assert np.isnan(r.concordance)
+    assert np.isnan(symmetric_concordance_ipcw(times, times, [1] * 5, [0] * 5).concordance)
+
+
+def test_censored_larger_member_still_usable() -> None:
+    """A pair with one event and a later censor IS orderable (event is smaller)."""
+    # p0 event at 10, p1 censored at 90 (gold); event at 12, censored at 80 (pred)
+    r = symmetric_concordance_index([10, 90], [12, 80], [1, 0], [1, 0])
+    assert r.n_usable == 1
+    assert r.concordance == 1.0  # both say p0 before p1
+
+
+def test_fewer_than_two_subjects_is_nan() -> None:
+    r = symmetric_concordance_index([10.0], [12.0])
+    assert r.n_pairs == 0
+    assert np.isnan(r.concordance)
+
+
+def test_float_dunder_returns_concordance() -> None:
+    r = symmetric_concordance_index([1, 2, 3], [1, 2, 3])
+    assert float(r) == r.concordance == 1.0
+
+
+def test_ipcw_equals_unweighted_without_censoring() -> None:
+    rng = np.random.default_rng(0)
+    t_gold = rng.uniform(5, 60, 40)
+    t_pred = t_gold + rng.normal(0, 5, 40)
+    plain = symmetric_concordance_index(t_gold, t_pred)
+    weighted = symmetric_concordance_ipcw(t_gold, t_pred)
+    assert np.isclose(plain.concordance, weighted.concordance)
+
+
 def test_callable_censoring_and_weight_floor() -> None:
     gold, pred = [10, 20, 30], [10, 30, 20]
-    hi = symmetric_concordance_index(
+    hi = symmetric_concordance_ipcw(
         gold,
         pred,
-        ipcw=True,
         weight_floor=0.05,
         censoring=lambda t: np.where(np.asarray(t, dtype=float) < 15, 0.5, 0.02),
     )
-    lo = symmetric_concordance_index(
+    lo = symmetric_concordance_ipcw(
         gold,
         pred,
-        ipcw=True,
         weight_floor=0.001,
         censoring=lambda t: np.where(np.asarray(t, dtype=float) < 15, 0.5, 0.02),
     )
-    assert hi.concordance == pytest.approx(2 / 3)
-    assert not np.isclose(hi.concordance_ipcw, lo.concordance_ipcw)
+    assert symmetric_concordance_index(gold, pred).concordance == pytest.approx(2 / 3)
+    assert not np.isclose(hi.concordance, lo.concordance)
 
 
-def test_kmcensoring_instance_matches_default_ipcw() -> None:
+def test_kmcensoring_instance_matches_default() -> None:
     gold_t, gold_e = [10, 20, 30, 40], [1, 1, 0, 1]
     pred_t, pred_e = [12, 18, 35, 38], [1, 1, 1, 1]
-    default = symmetric_concordance_index(gold_t, pred_t, gold_e, pred_e, ipcw=True)
+    default = symmetric_concordance_ipcw(gold_t, pred_t, gold_e, pred_e)
     km = KaplanMeierCensoring().fit(gold_t, gold_e)
-    explicit = symmetric_concordance_index(gold_t, pred_t, gold_e, pred_e, ipcw=True, censoring=km)
-    assert np.isclose(default.concordance_ipcw, explicit.concordance_ipcw)
+    explicit = symmetric_concordance_ipcw(gold_t, pred_t, gold_e, pred_e, censoring=km)
+    assert np.isclose(default.concordance, explicit.concordance)
 
 
 def test_bad_censoring_raises() -> None:
     with pytest.raises(TypeError, match="censoring must be"):
-        symmetric_concordance_index([1, 2, 3], [1, 2, 3], ipcw=True, censoring=42)  # type: ignore[arg-type]
+        symmetric_concordance_ipcw([1, 2, 3], [1, 2, 3], censoring=42)  # type: ignore[arg-type]
+
+
+def test_shape_mismatch_raises() -> None:
+    with pytest.raises(ValueError, match="same length"):
+        symmetric_concordance_index([1, 2, 3], [1, 2])
+
+
+def test_nan_times_raise() -> None:
+    with pytest.raises(ValueError, match="contains NaNs"):
+        symmetric_concordance_index([1, 2, np.nan], [1, 2, 3])
+
+
+def test_nan_observed_raises() -> None:
+    with pytest.raises(ValueError, match="contains NaNs"):
+        symmetric_concordance_index([1, 2, 3], [1, 2, 3], gold_observed=[1, np.nan, 0])
 
 
 def test_non_1d_input_raises() -> None:
