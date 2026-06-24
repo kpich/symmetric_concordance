@@ -1,16 +1,22 @@
 # symmetric-concordance
 
-A concordance index (C-index) between two right-censored survival series.
+Harrell's concordance index (C-index), extended to right-censored predictions.
 
-`lifelines.concordance_index` only lets the outcome be censored; the predicted score is
-treated as a plain number. This computes a C-index when both the gold series and the
-predicted series can be right-censored. A pair is only counted when its order is known on
-both sides (the smaller time is an event), so if the predicted side has no events nothing is
-orderable and you get NaN instead of a misleadingly perfect score.
+The concordance index measures how well a model ranks right-censored survival outcomes: like
+AUROC, it is a pairwise ranking score (0.5 is chance, 1 is perfect ordering) restricted to
+the pairs whose ordering is actually known. lifelines' `concordance_index` computes Harrell's
+version, but only the *outcome* may be censored; the prediction is treated as a fully
+observed number.
+
+When the prediction is itself a right-censored time (say an inferred time-to-event that for
+some subjects is only a lower bound), the natural extension applies the same comparability
+rule on both sides: a pair counts only when its order is known in the gold series and in the
+predicted series (the smaller time is an event). This keeps the same ranking-loss
+interpretation while letting both series be censored.
 
 ## Install
 
-Not on PyPI yet (coming soon). For now:
+Not on PyPI just yet. For now:
 
 ```bash
 pip install -e .
@@ -38,9 +44,10 @@ default to all-observed. The result fields:
 - `n_usable`, `n_pairs`, `frac_usable`: pair counts
 - `resolution_times`: per usable pair, the time it became orderable
 
-For the IPCW-reweighted version, call `symmetric_concordance_ipcw`. It fits a built-in
-Kaplan-Meier censoring curve unless you pass your own via `censoring=` (a fitted lifelines
-`KaplanMeierFitter`, any object with `.predict`, or a callable `G(t)`):
+For an inverse-probability-of-censoring weighted (IPCW) version, which upweights longer-time
+pairs to undo the bias toward short survivors, call `symmetric_concordance_ipcw`. It fits a
+built-in Kaplan-Meier censoring curve unless you pass your own via `censoring=` (a fitted
+lifelines `KaplanMeierFitter`, any object with `.predict`, or a callable `G(t)`):
 
 ```python
 import numpy as np
