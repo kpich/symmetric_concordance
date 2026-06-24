@@ -29,8 +29,10 @@ def test_builtin_km_matches_lifelines_kmf() -> None:
 
     kmf = KaplanMeierFitter().fit(gold_t, 1 - gold_e.astype(int))
 
-    r_builtin = symmetric_concordance_index(gold_t, pred_t, gold_e, pred_e)
-    r_lifelines = symmetric_concordance_index(gold_t, pred_t, gold_e, pred_e, censoring=kmf)
+    r_builtin = symmetric_concordance_index(gold_t, pred_t, gold_e, pred_e, ipcw=True)
+    r_lifelines = symmetric_concordance_index(
+        gold_t, pred_t, gold_e, pred_e, ipcw=True, censoring=kmf
+    )
     assert np.isclose(r_builtin.concordance_ipcw, r_lifelines.concordance_ipcw)
 
 

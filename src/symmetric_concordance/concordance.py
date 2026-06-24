@@ -98,7 +98,7 @@ def symmetric_concordance_index(
     gold_observed: ArrayLike | None = None,
     pred_observed: ArrayLike | None = None,
     *,
-    ipcw: bool = True,
+    ipcw: bool = False,
     censoring: SupportsPredict | Callable[..., Any] | None = None,
     weight_floor: float = 0.05,
 ) -> SymmetricConcordanceResult:
@@ -116,7 +116,8 @@ def symmetric_concordance_index(
         Length-n event flags, truthy where an event was observed and falsy where
         the subject was right-censored. ``None`` means all observed.
     ipcw
-        If ``True`` (default), also compute the IPCW-reweighted concordance.
+        If ``True``, also compute the IPCW-reweighted concordance (default
+        ``False``; when ``False`` no censoring curve is fit).
     censoring
         Estimate of the censoring survival ``G(t)`` for IPCW. ``None`` fits a
         built-in Kaplan-Meier estimator on the gold series. May also be a

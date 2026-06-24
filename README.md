@@ -27,7 +27,6 @@ pred_observed = [1, 1, 1, 1, 1]
 
 r = symmetric_concordance_index(gold_times, pred_times, gold_observed, pred_observed)
 r.concordance         # 1.0
-r.concordance_ipcw    # 1.0
 r.n_usable, r.n_pairs # (10, 10)
 ```
 
@@ -35,13 +34,13 @@ The two series are aligned by position (row `i` is the same subject in both). Ev
 default to all-observed. The result fields:
 
 - `concordance`: comparable-pairs concordance, 0.5 is chance
-- `concordance_ipcw`: IPCW-reweighted version (NaN when `ipcw=False`)
+- `concordance_ipcw`: IPCW-reweighted version (NaN unless `ipcw=True`)
 - `n_usable`, `n_pairs`, `frac_usable`: pair counts
 - `resolution_times`: per usable pair, the time it became orderable
 
-IPCW uses a built-in Kaplan-Meier estimate of the censoring curve by default. Pass a fitted
-lifelines `KaplanMeierFitter` (or any object with `.predict`, or a callable `G(t)`) to use
-your own:
+IPCW is off by default. Set `ipcw=True` to also get the reweighted value. It fits a built-in
+Kaplan-Meier censoring curve unless you pass your own via `censoring=` (a fitted lifelines
+`KaplanMeierFitter`, any object with `.predict`, or a callable `G(t)`):
 
 ```python
 import numpy as np
@@ -49,7 +48,7 @@ from lifelines import KaplanMeierFitter
 
 kmf = KaplanMeierFitter().fit(gold_times, 1 - np.asarray(gold_observed))
 r = symmetric_concordance_index(
-    gold_times, pred_times, gold_observed, pred_observed, censoring=kmf
+    gold_times, pred_times, gold_observed, pred_observed, ipcw=True, censoring=kmf
 )
 ```
 

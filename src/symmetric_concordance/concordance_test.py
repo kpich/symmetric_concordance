@@ -8,10 +8,16 @@ from symmetric_concordance import symmetric_concordance_index
 
 def test_perfect_agreement_all_observed() -> None:
     # Same ordering in both series; every event observed.
-    r = symmetric_concordance_index([10, 20, 30, 40, 50], [11, 19, 31, 39, 52])
+    r = symmetric_concordance_index([10, 20, 30, 40, 50], [11, 19, 31, 39, 52], ipcw=True)
     assert r.concordance == 1.0
     assert r.concordance_ipcw == 1.0
     assert r.n_usable == 10  # all pairs orderable
+
+
+def test_ipcw_off_by_default() -> None:
+    r = symmetric_concordance_index([10, 20, 30, 40, 50], [11, 19, 31, 39, 52])
+    assert r.concordance == 1.0
+    assert np.isnan(r.concordance_ipcw)
 
 
 def test_reversed_ordering() -> None:
@@ -23,7 +29,7 @@ def test_no_censoring_ipcw_equals_unweighted() -> None:
     rng = np.random.default_rng(0)
     t_gold = rng.uniform(5, 60, 40)
     t_pred = t_gold + rng.normal(0, 5, 40)
-    r = symmetric_concordance_index(t_gold, t_pred)
+    r = symmetric_concordance_index(t_gold, t_pred, ipcw=True)
     assert np.isclose(r.concordance, r.concordance_ipcw)
 
 
