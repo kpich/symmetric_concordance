@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from symmetric_concordance import KaplanMeierCensoring
+from symmetric_concordance.censoring import KaplanMeierCensoring
 
 
 def test_known_small_example() -> None:

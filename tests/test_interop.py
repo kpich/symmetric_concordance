@@ -7,7 +7,8 @@ which is why they live here rather than next to the source as unit tests.
 import numpy as np
 import pytest
 
-from symmetric_concordance import KaplanMeierCensoring, symmetric_concordance_ipcw
+from symmetric_concordance import symmetric_concordance_ipcw
+from symmetric_concordance.censoring import KaplanMeierCensoring
 
 
 def test_lifelines_spuriously_perfect_on_the_leak_case() -> None:

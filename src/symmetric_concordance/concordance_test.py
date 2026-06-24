@@ -3,11 +3,8 @@
 import numpy as np
 import pytest
 
-from symmetric_concordance import (
-    KaplanMeierCensoring,
-    symmetric_concordance_index,
-    symmetric_concordance_ipcw,
-)
+from symmetric_concordance import symmetric_concordance_index, symmetric_concordance_ipcw
+from symmetric_concordance.censoring import KaplanMeierCensoring
 
 
 def test_perfect_agreement_all_observed() -> None:
