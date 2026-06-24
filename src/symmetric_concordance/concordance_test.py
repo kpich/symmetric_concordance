@@ -65,10 +65,10 @@ def test_float_dunder_returns_concordance() -> None:
 
 
 def test_shape_mismatch_raises() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="same length"):
         symmetric_concordance_index([1, 2, 3], [1, 2])
 
 
 def test_nan_times_raise() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="contains NaNs"):
         symmetric_concordance_index([1, 2, np.nan], [1, 2, 3])

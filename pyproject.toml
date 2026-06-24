@@ -23,7 +23,7 @@ dependencies = ["numpy"]
 ipcw = ["lifelines"]
 
 [dependency-groups]
-dev = ["pytest", "ruff", "mypy", "lifelines"]
+dev = ["pytest", "ruff", "mypy", "lifelines", "pre-commit"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/symmetric_concordance"]
@@ -42,15 +42,46 @@ line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "NPY", "RUF", "D"]
-ignore = ["D203", "D213"]
+select = [
+    "F",    # pyflakes
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "I",    # isort (import ordering)
+    "N",    # pep8-naming
+    "D",    # pydocstyle (numpy convention)
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "A",    # flake8-builtins (shadowing)
+    "C4",   # flake8-comprehensions
+    "PIE",  # flake8-pie
+    "PT",   # flake8-pytest-style
+    "RET",  # flake8-return
+    "SIM",  # flake8-simplify
+    "ARG",  # flake8-unused-arguments
+    "TID",  # flake8-tidy-imports
+    "ICN",  # flake8-import-conventions
+    "TC",   # flake8-type-checking
+    "NPY",  # numpy-specific
+    "PERF", # perflint
+    "FURB", # refurb
+    "PL",   # pylint (C/E/R/W)
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "D203",    # one-blank-line-before-class (conflicts with D211)
+    "D213",    # multi-line-summary-second-line (conflicts with D212)
+    "PLR0913", # too-many-arguments: the public metric legitimately takes several
+    "PLR2004", # magic-value-comparison: too noisy, especially in tests
+]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
 [tool.ruff.lint.per-file-ignores]
-"**/*_test.py" = ["D"]
-"tests/*" = ["D"]
+# Tests: no docstring policy; allow CapWords locals (e.g. capturing a class
+# from importorskip) and unused pytest args.
+"**/*_test.py" = ["D", "N806", "ARG"]
+"tests/*" = ["D", "N806", "ARG"]
 
 [tool.mypy]
 python_version = "3.10"

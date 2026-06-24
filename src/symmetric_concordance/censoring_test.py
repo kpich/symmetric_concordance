@@ -36,5 +36,5 @@ def test_predict_before_fit_raises() -> None:
 
 
 def test_fit_shape_mismatch_raises() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="same shape"):
         KaplanMeierCensoring().fit([1, 2, 3], [1, 0])

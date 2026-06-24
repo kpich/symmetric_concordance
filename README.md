@@ -140,4 +140,10 @@ make dev     # uv sync — create/sync .venv with the package + dev tools
 make test    # run the test suite (uv run pytest)
 make ruff    # ruff check + ruff format --check
 make mypy    # strict type-check of src + tests
+make hooks   # install the pre-commit hook (ruff check --fix + ruff format on commit)
 ```
+
+`make hooks` installs the [pre-commit](https://pre-commit.com/) hook defined in
+`.pre-commit-config.yaml` (requires the project to be a git repo). After that, `ruff check
+--fix` and `ruff format` run automatically on every `git commit`; run them across the whole
+tree manually with `uv run pre-commit run --all-files`.

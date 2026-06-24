@@ -1,0 +1,10 @@
+# Install with: make hooks   (then hooks run automatically on `git commit`)
+# Run manually on everything: uv run pre-commit run --all-files
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Keep this rev in sync with the ruff pin in pyproject.toml's dev group.
+    rev: v0.15.19
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
