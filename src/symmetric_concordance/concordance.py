@@ -220,6 +220,12 @@ def symmetric_concordance_ipcw(
     SymmetricConcordanceResult
         ``concordance`` holds the IPCW-reweighted value (``nan`` if no pair is
         usable).
+
+    References
+    ----------
+    .. [1] Uno H, Cai T, Pencina MJ, D'Agostino RB, Wei LJ. "On the C-statistics
+       for evaluating overall adequacy of risk prediction procedures with
+       censored survival data." Statistics in Medicine 30(10):1105-1117, 2011.
     """
     gold_t, pred_t, gold_e, pred_e = _validate(gold_times, pred_times, gold_observed, pred_observed)
     agree, t_det, n_usable, n_pairs = _comparable_pairs(gold_t, pred_t, gold_e, pred_e)
