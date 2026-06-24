@@ -57,7 +57,6 @@ select = [
     "ARG",  # flake8-unused-arguments
     "TID",  # flake8-tidy-imports
     "ICN",  # flake8-import-conventions
-    "TC",   # flake8-type-checking
     "NPY",  # numpy-specific
     "PERF", # perflint
     "FURB", # refurb

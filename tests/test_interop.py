@@ -4,8 +4,6 @@ These import lifelines (heavy: ~0.6s) and are skipped if it is not installed,
 which is why they live here rather than next to the source as unit tests.
 """
 
-from __future__ import annotations
-
 import numpy as np
 import pytest
 

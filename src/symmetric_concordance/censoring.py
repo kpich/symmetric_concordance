@@ -12,16 +12,11 @@ callable ``G(t)``) can be handed to the metric instead, so the package stays
 numpy-only while interoperating seamlessly with lifelines.
 """
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from collections.abc import Callable
+from typing import Any, Protocol, runtime_checkable
 
 import numpy as np
-
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-    from numpy.typing import ArrayLike, NDArray
+from numpy.typing import ArrayLike, NDArray
 
 
 @runtime_checkable
@@ -49,7 +44,7 @@ class KaplanMeierCensoring:
         self._times: NDArray[np.float64] | None = None
         self._surv: NDArray[np.float64] | None = None
 
-    def fit(self, times: ArrayLike, observed: ArrayLike) -> KaplanMeierCensoring:
+    def fit(self, times: ArrayLike, observed: ArrayLike) -> "KaplanMeierCensoring":
         """Fit ``G`` from follow-up ``times`` and event flags ``observed``.
 
         Parameters

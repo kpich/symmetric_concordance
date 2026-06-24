@@ -1,7 +1,5 @@
 """Unit tests for :mod:`symmetric_concordance.concordance` (pure, no lifelines)."""
 
-from __future__ import annotations
-
 import numpy as np
 import pytest
 
