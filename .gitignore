@@ -11,6 +11,12 @@ dist/
 .ruff_cache/
 .mypy_cache/
 
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
 # Virtual envs
 .venv/
 venv/
