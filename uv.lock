@@ -1669,12 +1669,6 @@ dependencies = [
     { name = "numpy", version = "2.5.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
 ]
 
-[package.optional-dependencies]
-ipcw = [
-    { name = "lifelines", version = "0.30.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "lifelines", version = "0.30.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-]
-
 [package.dev-dependencies]
 dev = [
     { name = "lifelines", version = "0.30.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
@@ -1686,11 +1680,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "lifelines", marker = "extra == 'ipcw'" },
-    { name = "numpy" },
-]
-provides-extras = ["ipcw"]
+requires-dist = [{ name = "numpy" }]
 
 [package.metadata.requires-dev]
 dev = [

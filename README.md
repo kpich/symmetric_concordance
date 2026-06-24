@@ -14,7 +14,6 @@ Not on PyPI yet (coming soon). For now:
 
 ```bash
 pip install -e .
-pip install -e ".[ipcw]"   # adds lifelines, for KaplanMeierFitter interop
 ```
 
 ## Usage

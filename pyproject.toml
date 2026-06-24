@@ -19,9 +19,6 @@ classifiers = [
 ]
 dependencies = ["numpy"]
 
-[project.optional-dependencies]
-ipcw = ["lifelines"]
-
 [dependency-groups]
 dev = ["pytest", "ruff", "mypy", "lifelines", "pre-commit"]
 
