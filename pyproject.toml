@@ -1,0 +1,62 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "symmetric-concordance"
+version = "0.1.0"
+description = "Concordance index (C-index) between two right-censored survival series."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Karl Pichotta", email = "karlpichotta@gmail.com" }]
+keywords = ["survival-analysis", "concordance", "c-index", "censoring", "ipcw", "lifelines"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = ["numpy"]
+
+[project.optional-dependencies]
+ipcw = ["lifelines"]
+
+[dependency-groups]
+dev = ["pytest", "ruff", "mypy", "lifelines"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/symmetric_concordance"]
+exclude = ["**/*_test.py"]  # co-located unit tests are dev-only, not shipped
+
+[tool.pytest.ini_options]
+# Unit tests live next to their source (src/**/*_test.py); integration tests
+# live in tests/. importlib mode is the recommended way to collect tests that
+# live inside an installed src-layout package.
+testpaths = ["src", "tests"]
+python_files = ["*_test.py", "test_*.py"]
+addopts = "--import-mode=importlib"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "NPY", "RUF", "D"]
+ignore = ["D203", "D213"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+"**/*_test.py" = ["D"]
+"tests/*" = ["D"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+files = ["src", "tests"]
+
+[[tool.mypy.overrides]]
+module = ["lifelines.*"]
+ignore_missing_imports = true
