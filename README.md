@@ -60,7 +60,7 @@ weights are `1 / G(t)**2`, with `G` floored at `weight_floor` (default 0.05).
 ## Caveats
 
 - `gold_times` and `pred_times` are each used only for *within-series* ordering, so they
-  need not share a scale — just orient both so bigger = later event. (IPCW is the exception:
+  need not share a scale, just orient both so bigger = later event. (IPCW is the exception:
   its binding time `max(gold, pred)` needs them on the same time axis.)
 - Pass `pred_observed` when predictions are censored. It defaults to all-observed, which
   brings back the bias this metric exists to avoid.
