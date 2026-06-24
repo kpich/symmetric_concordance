@@ -1,18 +1,18 @@
 # symmetric-concordance
 
-Harrell's C-index extended to right-censored predictions.
+Harrell's concordance index (C-index), extended to right-censored predictions.
 
-Harrell's C-index measures the rank concordance of a model against right-censored survival
-outcomes: like AUROC, it is a pairwise ranking score (0.5 is chance, 1 is perfect ordering)
-restricted to the pairs whose ordering is actually known. lifelines' `concordance_index`
-computes it, but only the *outcome* may be censored; the prediction is treated as a fully
+The concordance index measures how well a model ranks right-censored survival outcomes: like
+AUROC, it is a pairwise ranking score (0.5 is chance, 1 is perfect ordering) restricted to
+the pairs whose ordering is actually known. lifelines' `concordance_index` computes Harrell's
+version, but only the *outcome* may be censored; the prediction is treated as a fully
 observed number.
 
 When the prediction is itself a right-censored time (say an inferred time-to-event that for
-some subjects is only a lower bound), the natural extension is to apply the same
-comparability rule on both sides: a pair counts only when its order is known in the gold
-series and in the predicted series (the smaller time is an event). Same ranking-loss
-semantics, now symmetric across two censored series.
+some subjects is only a lower bound), the natural extension applies the same comparability
+rule on both sides: a pair counts only when its order is known in the gold series and in the
+predicted series (the smaller time is an event). This keeps the same ranking-loss
+interpretation while letting both series be censored.
 
 ## Install
 
