@@ -16,10 +16,8 @@ interpretation while letting both series be censored.
 
 ## Install
 
-Not on PyPI just yet. For now:
-
 ```bash
-pip install -e .
+pip install symmetric-concordance
 ```
 
 ## Usage
@@ -72,13 +70,3 @@ weights are `1 / G(t)**2`, with `G` floored at `weight_floor` (default 0.05).
 - Pass `pred_observed` when predictions are censored. It defaults to all-observed, which
   brings back the bias this metric exists to avoid.
 - Series are aligned by position; align by id yourself first if needed.
-
-## Development
-
-```bash
-make dev     # uv sync
-make test
-make ruff
-make mypy
-make hooks   # install the pre-commit hook
-```

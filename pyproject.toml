@@ -19,6 +19,11 @@ classifiers = [
 ]
 dependencies = ["numpy"]
 
+[project.urls]
+Homepage = "https://github.com/kpich/symmetric_concordance"
+Repository = "https://github.com/kpich/symmetric_concordance"
+Issues = "https://github.com/kpich/symmetric_concordance/issues"
+
 [dependency-groups]
 dev = ["pytest", "ruff", "mypy", "lifelines", "pre-commit"]
 
