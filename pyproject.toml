@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "symmetric-concordance"
-version = "0.1.0"
+version = "0.2.0.dev0"
 description = "Concordance index (C-index) between two right-censored survival series."
 readme = "README.md"
 requires-python = ">=3.10"
