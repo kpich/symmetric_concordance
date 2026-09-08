@@ -53,10 +53,10 @@ class SymmetricConcordanceResult:
     resolution_times
         Per usable pair, the binding time ``max(gold_t*, pred_t*)`` at which the
         pair becomes orderable -- the distribution that reveals short-time bias.
-        Always populated by :func:`symmetric_concordance_ipcw`, which needs it
-        anyway; empty from :func:`symmetric_concordance_index` unless asked for
-        with ``resolution_times=True``, since it is the one field that costs
-        O(n**2) to produce.
+        The one field that costs O(n**2) to produce, so
+        :func:`symmetric_concordance_index` leaves it empty unless asked with
+        ``resolution_times=True``. :func:`symmetric_concordance_ipcw` always
+        fills it, needing it anyway.
     """
 
     concordance: float
@@ -177,7 +177,7 @@ def _count_pairs_fenwick(
     times are ranked with :func:`numpy.unique` so tied times share a rank and a
     prefix query is strict for free.
     """
-    n = gold_t.shape[0]  # callers guarantee n >= 2
+    n = gold_t.shape[0]
     uniq_pred, tf_rank = np.unique(pred_t, return_inverse=True)
     ranks: list[int] = tf_rank.ravel().tolist()
     n_ranks = uniq_pred.shape[0]
@@ -245,13 +245,11 @@ def symmetric_concordance_index(
         Length-n event flags, truthy where an event was observed and falsy where
         the subject was right-censored. ``None`` means all observed.
     resolution_times
-        Also return the per-usable-pair binding times in
-        :attr:`SymmetricConcordanceResult.resolution_times`. Off by default:
-        that is one value *per pair*, so producing it needs the O(n**2) path
-        (~150 ms and ~900 MB at n=4,644, and out of reach by n=50,000), whereas
-        the counts alone come from an O(n log n) sweep in O(n) memory. When left
-        off, the field is an empty array; every other field is populated either
-        way. Both paths return identical counts and concordance.
+        Also fill :attr:`SymmetricConcordanceResult.resolution_times`. Off by
+        default: that is one value *per pair*, so it needs the O(n**2) path,
+        where the counts alone come from an O(n log n) sweep in O(n) memory.
+        Left off, the field is empty; every other field is populated either way
+        and both paths give identical counts and concordance.
 
     Returns
     -------
@@ -293,12 +291,11 @@ def symmetric_concordance_ipcw(
     Each usable pair is weighted by ``1 / G(t)**2`` at its binding time, undoing
     the short-time bias from informative censoring.
 
-    This enumerates pairs densely, so it is O(n**2) in both time and memory --
-    unlike the default path of :func:`symmetric_concordance_index`, which is
-    O(n log n). A pair's binding time ``max(gold_t*, pred_t*)`` depends on
-    *both* members when the two margins disagree, so the weighted total does not
-    reduce to a dominance count the way the unweighted one does. Budget for the
-    dense cost (~150 ms and ~900 MB at n=4,644) or subsample.
+    This enumerates pairs densely, so it is O(n**2) in both time and memory,
+    unlike the default path of :func:`symmetric_concordance_index`. A pair's
+    binding time ``max(gold_t*, pred_t*)`` depends on *both* members when the
+    margins disagree, so the weighted total does not reduce to a dominance count
+    the way the unweighted one does.
 
     Parameters
     ----------

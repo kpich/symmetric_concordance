@@ -187,7 +187,7 @@ def test_fast_path_matches_dense_path_on_continuous_times() -> None:
         assert fast.n_usable == dense.n_usable
 
 
-def test_fast_path_runs_at_a_size_the_dense_path_cannot() -> None:
+def test_fast_path_on_a_large_cohort() -> None:
     rng = np.random.default_rng(3)
     n = 5_000
     gold_t = rng.uniform(1, 100, n)
