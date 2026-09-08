@@ -41,3 +41,27 @@ def test_fit_shape_mismatch_raises() -> None:
 def test_fit_non_1d_raises() -> None:
     with pytest.raises(ValueError, match="1-dimensional"):
         KaplanMeierCensoring().fit([[1, 2], [3, 4]], [1, 0, 1, 0])
+
+
+def test_tied_times_share_one_step() -> None:
+    # Two censorings at t=2 drop together; the t=1 subject has already left the
+    # risk set, so they drop off 3, not 4.
+    #   t=2: at risk 3, 2 drop -> G = 1/3
+    #   t=5: at risk 1, 1 drop -> G = 0
+    km = KaplanMeierCensoring().fit([1, 2, 2, 5], [1, 0, 0, 0])
+    assert np.allclose(km.predict([1.0, 2.0, 4.9, 5.0]), [1.0, 1 / 3, 1 / 3, 0.0])
+
+
+def test_all_censored_drops_g_to_zero() -> None:
+    km = KaplanMeierCensoring().fit([1, 2, 3], [0, 0, 0])
+    assert np.allclose(km.predict([0.5, 1.0, 2.0, 3.0]), [1.0, 2 / 3, 1 / 3, 0.0])
+
+
+def test_unsorted_input_matches_sorted() -> None:
+    t = [7.0, 1.0, 3.0, 3.0, 9.0, 5.0]
+    o = [0, 1, 0, 1, 0, 0]
+    order = np.argsort(t)
+    shuffled = KaplanMeierCensoring().fit(t, o)
+    sorted_fit = KaplanMeierCensoring().fit(np.asarray(t)[order], np.asarray(o)[order])
+    grid = np.linspace(0, 10, 30)
+    assert np.allclose(shuffled.predict(grid), sorted_fit.predict(grid))
