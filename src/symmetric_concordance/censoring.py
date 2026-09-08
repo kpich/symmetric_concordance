@@ -72,18 +72,16 @@ class KaplanMeierCensoring:
         t_sorted = t[order]
         e_sorted = censor_event[order]
 
-        uniq = np.unique(t_sorted)
-        surv = np.empty(uniq.shape[0], dtype=np.float64)
-        running = 1.0
-        for k, ut in enumerate(uniq):
-            at_risk = int(np.count_nonzero(t_sorted >= ut))
-            failures = int(np.count_nonzero((t_sorted == ut) & e_sorted))
-            if at_risk > 0:
-                running *= 1.0 - failures / at_risk
-            surv[k] = running
+        # t_sorted is sorted, so the number still at risk at a unique time is
+        # everything from that time's first occurrence onward, and the failures
+        # at each unique time are a bincount over which unique time each row is.
+        uniq, inverse = np.unique(t_sorted, return_inverse=True)
+        at_risk = t_sorted.shape[0] - np.searchsorted(t_sorted, uniq, side="left")
+        failures = np.bincount(inverse.ravel()[e_sorted], minlength=uniq.shape[0])
+        surv = np.cumprod(1.0 - failures / at_risk)
 
         self._times = uniq
-        self._surv = surv
+        self._surv = surv.astype(np.float64)
         return self
 
     def predict(self, times: ArrayLike) -> NDArray[np.float64]:

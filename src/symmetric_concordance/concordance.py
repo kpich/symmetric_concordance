@@ -24,11 +24,13 @@ concordant if the two margins agree on the direction.
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from itertools import pairwise
 from typing import Any
 
 import numpy as np
 from numpy.typing import ArrayLike, NDArray
 
+from ._fenwick import Fenwick
 from .censoring import SupportsPredict, resolve_censoring
 
 
@@ -51,6 +53,10 @@ class SymmetricConcordanceResult:
     resolution_times
         Per usable pair, the binding time ``max(gold_t*, pred_t*)`` at which the
         pair becomes orderable -- the distribution that reveals short-time bias.
+        Always populated by :func:`symmetric_concordance_ipcw`, which needs it
+        anyway; empty from :func:`symmetric_concordance_index` unless asked for
+        with ``resolution_times=True``, since it is the one field that costs
+        O(n**2) to produce.
     """
 
     concordance: float
@@ -144,6 +150,72 @@ def _comparable_pairs(
     return agree, t_det, n_usable, n_pairs
 
 
+def _count_pairs_fenwick(
+    gold_t: NDArray[np.float64],
+    pred_t: NDArray[np.float64],
+    gold_e: NDArray[np.bool_],
+    pred_e: NDArray[np.bool_],
+) -> tuple[int, int]:
+    """Return ``(n_concordant, n_discordant)`` in O(n log n) time and O(n) memory.
+
+    Attribute every usable pair to its *gold-first* member ``a`` (the one gold
+    puts first, so ``gold_e[a]`` and ``gold_t[a] < gold_t[b]``). Exactly one
+    member qualifies per usable pair, so nothing is counted twice:
+
+    * concordant -- the prediction agrees, both flags coming from ``a``:
+      ``eg_a & ef_a & tg_a < tg_b & tf_a < tf_b``
+    * discordant -- the prediction disagrees, so ``b`` carries the pred flag:
+      ``eg_a & ef_b & tg_a < tg_b & tf_b < tf_a``
+
+    Both are 2-D dominance counts, so sweep subjects in *descending* gold time
+    -- everything already inserted then satisfies ``tg_b > tg_a`` -- and prefix-
+    count over predicted-time rank with two Fenwick trees.
+
+    Ties are the whole difficulty. The metric compares with a strict ``<`` in
+    both margins, so equal-``gold_t`` subjects are queried as a group *before*
+    any of them is inserted (a tied pair must not see itself), and predicted
+    times are ranked with :func:`numpy.unique` so tied times share a rank and a
+    prefix query is strict for free.
+    """
+    n = gold_t.shape[0]  # callers guarantee n >= 2
+    uniq_pred, tf_rank = np.unique(pred_t, return_inverse=True)
+    ranks: list[int] = tf_rank.ravel().tolist()
+    n_ranks = uniq_pred.shape[0]
+
+    order = np.argsort(gold_t, kind="stable")[::-1]  # descending gold time
+    tg_sorted = gold_t[order]
+    starts = np.flatnonzero(np.concatenate(([True], tg_sorted[1:] != tg_sorted[:-1])))
+    bounds: list[int] = np.append(starts, n).tolist()
+
+    # Python lists, not arrays: the sweep is scalar work and numpy element
+    # access would cost more per item than the whole Fenwick update.
+    sweep: list[int] = order.tolist()
+    ge: list[bool] = gold_e.tolist()
+    pe: list[bool] = pred_e.tolist()
+
+    fen_all = Fenwick(n_ranks)  # every subject inserted so far
+    fen_ef = Fenwick(n_ranks)  # ... restricted to those with a predicted event
+    inserted = 0
+    concordant = 0
+    discordant = 0
+    for lo, hi in pairwise(bounds):
+        group = sweep[lo:hi]
+        for a in group:  # query the whole tied group first
+            if not ge[a]:
+                continue
+            r = ranks[a]
+            discordant += fen_ef.pref(r)  # inserted b with ef_b and tf_b < tf_a
+            if pe[a]:
+                concordant += inserted - fen_all.pref(r + 1)  # ... with tf_b > tf_a
+        for a in group:  # then insert it
+            r = ranks[a]
+            fen_all.add(r)
+            if pe[a]:
+                fen_ef.add(r)
+            inserted += 1
+    return concordant, discordant
+
+
 def _result(
     concordance: float, t_det: NDArray[np.float64], n_usable: int, n_pairs: int
 ) -> SymmetricConcordanceResult:
@@ -156,6 +228,8 @@ def symmetric_concordance_index(
     pred_times: ArrayLike,
     gold_observed: ArrayLike | None = None,
     pred_observed: ArrayLike | None = None,
+    *,
+    resolution_times: bool = False,
 ) -> SymmetricConcordanceResult:
     """Comparable-pairs concordance between two right-censored series.
 
@@ -170,6 +244,14 @@ def symmetric_concordance_index(
     gold_observed, pred_observed
         Length-n event flags, truthy where an event was observed and falsy where
         the subject was right-censored. ``None`` means all observed.
+    resolution_times
+        Also return the per-usable-pair binding times in
+        :attr:`SymmetricConcordanceResult.resolution_times`. Off by default:
+        that is one value *per pair*, so producing it needs the O(n**2) path
+        (~150 ms and ~900 MB at n=4,644, and out of reach by n=50,000), whereas
+        the counts alone come from an O(n log n) sweep in O(n) memory. When left
+        off, the field is an empty array; every other field is populated either
+        way. Both paths return identical counts and concordance.
 
     Returns
     -------
@@ -183,9 +265,18 @@ def symmetric_concordance_index(
     tied predictions get no half-credit (unlike lifelines' ``concordance_index``).
     """
     gold_t, pred_t, gold_e, pred_e = _validate(gold_times, pred_times, gold_observed, pred_observed)
-    agree, t_det, n_usable, n_pairs = _comparable_pairs(gold_t, pred_t, gold_e, pred_e)
-    concordance = float(agree.mean()) if n_usable else float("nan")
-    return _result(concordance, t_det, n_usable, n_pairs)
+    if resolution_times:
+        agree, t_det, n_usable, n_pairs = _comparable_pairs(gold_t, pred_t, gold_e, pred_e)
+        concordance = float(agree.mean()) if n_usable else float("nan")
+        return _result(concordance, t_det, n_usable, n_pairs)
+
+    n = gold_t.shape[0]
+    if n < 2:
+        return _result(float("nan"), np.empty(0, dtype=np.float64), 0, 0)
+    n_concordant, n_discordant = _count_pairs_fenwick(gold_t, pred_t, gold_e, pred_e)
+    n_usable = n_concordant + n_discordant
+    concordance = n_concordant / n_usable if n_usable else float("nan")
+    return _result(concordance, np.empty(0, dtype=np.float64), n_usable, n * (n - 1) // 2)
 
 
 def symmetric_concordance_ipcw(
@@ -201,6 +292,13 @@ def symmetric_concordance_ipcw(
 
     Each usable pair is weighted by ``1 / G(t)**2`` at its binding time, undoing
     the short-time bias from informative censoring.
+
+    This enumerates pairs densely, so it is O(n**2) in both time and memory --
+    unlike the default path of :func:`symmetric_concordance_index`, which is
+    O(n log n). A pair's binding time ``max(gold_t*, pred_t*)`` depends on
+    *both* members when the two margins disagree, so the weighted total does not
+    reduce to a dominance count the way the unweighted one does. Budget for the
+    dense cost (~150 ms and ~900 MB at n=4,644) or subsample.
 
     Parameters
     ----------

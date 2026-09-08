@@ -40,7 +40,8 @@ default to all-observed. The result fields:
 
 - `concordance`: comparable-pairs concordance, 0.5 is chance (NaN if no pair is usable)
 - `n_usable`, `n_pairs`, `frac_usable`: pair counts
-- `resolution_times`: per usable pair, the time it became orderable
+- `resolution_times`: per usable pair, the time it became orderable. Off by default — pass
+  `resolution_times=True` to fill it in (see [Performance](#performance))
 
 For an inverse-probability-of-censoring weighted (IPCW) version, which upweights longer-time
 pairs to undo the bias toward short survivors, call `symmetric_concordance_ipcw`. It fits a
@@ -62,7 +63,24 @@ r.concordance   # IPCW-reweighted
 Ties in time aren't orderable (strict `<`), so tied predictions get no half-credit. IPCW
 weights are `1 / G(t)**2`, with `G` floored at `weight_floor` (default 0.05).
 
-## Caveats
+## Performance
+
+`symmetric_concordance_index` counts comparable pairs rather than enumerating them, so it is
+O(n log n) in time and O(n) in memory: 43 ms and 5 MiB at n=50,000, which makes bootstrapping
+it cheap.
+
+Two things do cost O(n²) in both time and memory, because they need a value per *pair* rather
+than a count. Neither is on the default path:
+
+- `resolution_times=True`, which returns each usable pair's binding time. Off by default for
+  this reason; every other field is populated either way, and the two paths agree exactly.
+- `symmetric_concordance_ipcw`, whose weights use `max(gold_t, pred_t)` across *both* members
+  when the margins disagree, so the total doesn't reduce to a count. Budget for it, or
+  subsample.
+
+`uv run python bench/bench_concordance.py` measures both on your machine.
+
+## Notes
 
 - `gold_times` and `pred_times` are each used only for *within-series* ordering, so they
   need not share a scale, just orient both so bigger = later event. (IPCW is the exception:
