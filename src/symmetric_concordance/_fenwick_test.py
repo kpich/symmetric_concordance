@@ -9,10 +9,10 @@ def test_prefix_counts_items_strictly_below() -> None:
     fen = Fenwick(5)
     for i in (0, 2, 2, 4):
         fen.add(i)
-    assert fen.pref(0) == 0  # nothing is below index 0
-    assert fen.pref(1) == 1  # just the 0
-    assert fen.pref(3) == 3  # the 0 and both 2s
-    assert fen.pref(5) == 4  # everything
+    assert fen.pref(0) == 0
+    assert fen.pref(1) == 1
+    assert fen.pref(3) == 3
+    assert fen.pref(5) == 4
 
 
 def test_empty_tree_is_queryable() -> None:

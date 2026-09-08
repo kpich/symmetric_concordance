@@ -1,14 +1,4 @@
-"""A minimal Fenwick tree (binary indexed tree) of counts.
-
-Private helper behind the O(n log n) pair-counting path in
-:mod:`symmetric_concordance.concordance`. Both counts the metric needs are 2-D
-dominance counts, and a dominance count is a sweep in one coordinate plus
-prefix-counting in the other -- which is exactly what this structure does in
-``O(log n)`` per operation and ``O(n)`` memory.
-
-Plain Python ints, no numpy: the arrays involved are tiny and the per-operation
-cost is a handful of integer ops, so numpy's per-call overhead would dominate.
-"""
+"""A Fenwick tree (binary indexed tree) of counts, ``O(log n)`` per operation."""
 
 
 class Fenwick:
@@ -17,8 +7,7 @@ class Fenwick:
     Parameters
     ----------
     size
-        Number of distinct indices that may be added. ``0`` is allowed and
-        yields a tree that can only be queried (always ``0``).
+        Number of distinct indices that may be added.
     """
 
     __slots__ = ("_size", "_tree")
@@ -38,7 +27,7 @@ class Fenwick:
         """Return how many recorded items have an index ``< count``.
 
         ``pref(0)`` is ``0`` and ``pref(size)`` is the total recorded, so a
-        strict "below" query needs no off-by-one juggling at the call site.
+        strict "below" query needs no off-by-one at the call site.
         """
         i = min(count, self._size)
         total = 0

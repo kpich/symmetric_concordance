@@ -65,29 +65,22 @@ weights are `1 / G(t)**2`, with `G` floored at `weight_floor` (default 0.05).
 
 ## Performance
 
-`symmetric_concordance_index` counts pairs without enumerating them: the metric reduces to two
-2-D dominance counts, each a Fenwick-tree sweep in O(n log n) time and O(n) memory. So a cohort
-that a pairwise implementation cannot hold in memory is a few tens of milliseconds here, and a
-bootstrap over it is ordinary rather than an overnight job.
+`symmetric_concordance_index` counts comparable pairs rather than enumerating them, so it is
+O(n log n) in time and O(n) in memory: 43 ms and 5 MiB at n=50,000, which makes bootstrapping
+it cheap.
 
-| n | enumerating pairs | counting them | peak memory |
-|---|---|---|---|
-| 4,644 | 113 ms | 4 ms | 721 MiB → 1 MiB |
-| 20,000 | 3.9 s | 17 ms | 13 GiB → 2 MiB |
-| 50,000 | ~28 GiB, not runnable | 43 ms | 5 MiB |
+Two things do cost O(n²) in both time and memory, because they need a value per *pair* rather
+than a count. Neither is on the default path:
 
-Two things still enumerate pairs, because they need a value *per pair* rather than a count:
+- `resolution_times=True`, which returns each usable pair's binding time. Off by default for
+  this reason; every other field is populated either way, and the two paths agree exactly.
+- `symmetric_concordance_ipcw`, whose weights use `max(gold_t, pred_t)` across *both* members
+  when the margins disagree, so the total doesn't reduce to a count. Budget for it, or
+  subsample.
 
-- `resolution_times=True`, which returns each usable pair's binding time. It is off by default
-  for exactly this reason; every other field is populated either way, and both paths return
-  identical counts.
-- `symmetric_concordance_ipcw`. A pair's weight depends on `max(gold_t, pred_t)` across *both*
-  members when the margins disagree, so the weighted total does not reduce to a dominance
-  count. Budget O(n²) for it, or subsample.
+`uv run python bench/bench_concordance.py` measures both on your machine.
 
-Re-measure with `uv run python bench/bench_concordance.py`.
-
-## Caveats
+## Notes
 
 - `gold_times` and `pred_times` are each used only for *within-series* ordering, so they
   need not share a scale, just orient both so bigger = later event. (IPCW is the exception:

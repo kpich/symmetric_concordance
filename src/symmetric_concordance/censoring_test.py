@@ -44,10 +44,8 @@ def test_fit_non_1d_raises() -> None:
 
 
 def test_tied_times_share_one_step() -> None:
-    # Two censorings at t=2 drop together; the t=1 subject has already left the
-    # risk set, so they drop off 3, not 4.
-    #   t=2: at risk 3, 2 drop -> G = 1/3
-    #   t=5: at risk 1, 1 drop -> G = 0
+    # Both t=2 censorings drop off an at-risk set of 3: the t=1 subject has
+    # already left. So G = 1/3 from t=2, then 0 at t=5.
     km = KaplanMeierCensoring().fit([1, 2, 2, 5], [1, 0, 0, 0])
     assert np.allclose(km.predict([1.0, 2.0, 4.9, 5.0]), [1.0, 1 / 3, 1 / 3, 0.0])
 

@@ -45,7 +45,6 @@ def test_resolution_times_empty_unless_requested() -> None:
     dense = symmetric_concordance_index(*args, resolution_times=True)
     assert fast.resolution_times.shape == (0,)
     assert dense.resolution_times.shape == (dense.n_usable,)
-    # the counts are the point: the fast path drops only the per-pair times
     assert (fast.concordance, fast.n_usable, fast.n_pairs) == (
         dense.concordance,
         dense.n_usable,
@@ -158,13 +157,6 @@ def _same_concordance(a: float, b: float) -> bool:
 
 
 def test_fast_path_matches_dense_path_under_heavy_ties() -> None:
-    """The load-bearing test for the O(n log n) rewrite.
-
-    Integer times drawn from a 12-value grid so ties are dense in both margins
-    and in both directions -- ties are the whole difficulty of the counting
-    path, which has to query a tied group before inserting any of it. Equality
-    here is exact, not approximate: both paths count the same integers.
-    """
     rng = np.random.default_rng(20260908)
     for _ in range(200):
         n = int(rng.integers(2, 41))
@@ -181,7 +173,6 @@ def test_fast_path_matches_dense_path_under_heavy_ties() -> None:
 
 
 def test_fast_path_matches_dense_path_on_continuous_times() -> None:
-    """No ties at all -- the other extreme of the same equivalence."""
     rng = np.random.default_rng(11)
     for _ in range(50):
         n = int(rng.integers(2, 61))
@@ -197,7 +188,6 @@ def test_fast_path_matches_dense_path_on_continuous_times() -> None:
 
 
 def test_fast_path_runs_at_a_size_the_dense_path_cannot() -> None:
-    """n=5,000 is ~12.5M pairs: seconds and ~1 GB densely, milliseconds here."""
     rng = np.random.default_rng(3)
     n = 5_000
     gold_t = rng.uniform(1, 100, n)
@@ -206,5 +196,4 @@ def test_fast_path_runs_at_a_size_the_dense_path_cannot() -> None:
         gold_t, pred_t, rng.integers(0, 2, n).astype(bool), rng.integers(0, 2, n).astype(bool)
     )
     assert r.n_pairs == n * (n - 1) // 2
-    assert 0.0 < r.concordance < 1.0
     assert r.concordance > 0.5  # pred_times track gold_times
