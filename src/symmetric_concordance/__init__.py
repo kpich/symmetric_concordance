@@ -5,6 +5,7 @@ outcome and treats the predicted marker as a fully-observed number -- this
 package allows *both* series to be right-censored.
 """
 
+from .censoring import SupportsPredict
 from .concordance import (
     SymmetricConcordanceResult,
     symmetric_concordance_index,
@@ -12,6 +13,7 @@ from .concordance import (
 )
 
 __all__ = [
+    "SupportsPredict",
     "SymmetricConcordanceResult",
     "symmetric_concordance_index",
     "symmetric_concordance_ipcw",

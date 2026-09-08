@@ -1,7 +1,10 @@
-.PHONY: dev test ruff mypy hooks clean build publish-test publish
+.PHONY: dev check test ruff mypy hooks clean build publish-test publish
 
 dev:
 	uv sync
+
+# Everything CI runs, in one target.
+check: test ruff mypy
 
 test:
 	uv run pytest -q

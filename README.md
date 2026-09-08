@@ -65,20 +65,11 @@ weights are `1 / G(t)**2`, with `G` floored at `weight_floor` (default 0.05).
 
 ## Performance
 
-`symmetric_concordance_index` counts comparable pairs rather than enumerating them, so it is
-O(n log n) in time and O(n) in memory: 43 ms and 5 MiB at n=50,000, which makes bootstrapping
-it cheap.
+`symmetric_concordance_index` counts comparable pairs rather than enumerating them: O(n log n)
+time, O(n) memory, 43 ms at n=50,000.
 
-Two things do cost O(n²) in both time and memory, because they need a value per *pair* rather
-than a count. Neither is on the default path:
-
-- `resolution_times=True`, which returns each usable pair's binding time. Off by default for
-  this reason; every other field is populated either way, and the two paths agree exactly.
-- `symmetric_concordance_ipcw`, whose weights use `max(gold_t, pred_t)` across *both* members
-  when the margins disagree, so the total doesn't reduce to a count. Budget for it, or
-  subsample.
-
-`uv run python bench/bench_concordance.py` measures both on your machine.
+Two things are O(n²) instead, because they need a value per *pair* rather than a count:
+`resolution_times=True` and `symmetric_concordance_ipcw`. Neither is on the default path.
 
 ## Notes
 
